@@ -17,6 +17,7 @@ from ParseRackPrint import generate_rack_summary_file, generate_rack_folder
 
 rack_prints_folder = r'C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Test - RackPrints'
 delivered_glass_path = r'C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Test - RackPrints\Delivered_Glass.xlsx'
+customer_group_file=r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Projects\Truck Planning Automation\Unit-Optimisation\customer_groups.xlsx"
 
 # =============================================================================
 # Helper functions
@@ -59,9 +60,9 @@ def get_delivered_glass(delivered_glass_path):
 
     return delivered
 
-def get_rack_summary_glass():
+def get_rack_summary_glass(folder_path):
 
-    rack_summary_path, header = generate_rack_summary_file(rack_prints_folder)
+    rack_summary_path, header = generate_rack_summary_file(folder_path)
 
     # Load workbook and first sheet
     wb = load_workbook(rack_summary_path, data_only=False, read_only=False)
@@ -85,9 +86,9 @@ def get_rack_summary_glass():
 # Main function
 # =============================================================================
 
-def compare_reports():
+def compare_reports(folder_path):
 
-    rack_summary_glass, header = get_rack_summary_glass()
+    rack_summary_glass, header = get_rack_summary_glass(folder_path)
     delivered = get_delivered_glass(delivered_glass_path)
 
     matching_keys = set(rack_summary_glass.keys()) & set(delivered.keys())
@@ -145,7 +146,9 @@ def compare_reports():
 
 # compare_reports()
 
-generate_rack_folder(rack_prints_folder, customer_group_file=r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Projects\Truck Planning Automation\Unit-Optimisation\customer_groups.xlsx")
+dest_folder = generate_rack_folder(rack_prints_folder, customer_group_file)
+compare_reports(dest_folder)
+
 
 
             

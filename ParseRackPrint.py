@@ -127,7 +127,7 @@ def generate_rack_summary_file(folder_path):
 
     return output_file, header
 
-def generate_rack_folder(source_folder_path, dest_folder_path=None, customer_group_file=None):
+def generate_rack_folder(source_folder_path, customer_group_file=None, dest_folder_path=None):
 
     customer_group_wb = load_workbook(customer_group_file, data_only=False) if customer_group_file else None
     customer_group_ws = customer_group_wb.active if customer_group_wb else None
@@ -135,8 +135,8 @@ def generate_rack_folder(source_folder_path, dest_folder_path=None, customer_gro
     customer_names = [cell.value for cell in customer_group_ws['A'][1:]] if customer_group_ws else []
     patterns = _normalize_keywords(customer_names)
 
-    target_datetime = _parse_date_any(prompt_str("Enter the target date (DDMMYY)"))
-    start_datetime = target_datetime - timedelta(hours=9, minutes=30)
+    target_datetime = _parse_date_any(prompt_str("Enter the target date (DD.MM.YY)"))
+    start_datetime = target_datetime - timedelta(hours=9, minutes=30) 
 
     local_or_OOT = prompt_str("Local or OOT?")
 
@@ -161,12 +161,24 @@ def generate_rack_folder(source_folder_path, dest_folder_path=None, customer_gro
                         parts = cleaned_line.split('\t')
                         customer = deliver_group_key(parts[2], patterns)[0]
 
-                        if customer in [pattern['label'] for pattern in patterns]:
-                            if dest_folder_path is None:
-                                dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
-                            os.makedirs(dest_folder_path, exist_ok=True)
-                            src_file_path = os.path.join(source_folder_path, file)
-                            dest_file_path = os.path.join(dest_folder_path, file)
-                            shutil.copy(src_file_path, dest_file_path)
+                        if local_or_OOT == "OOT":
+                            if customer in [pattern['label'] for pattern in patterns]:
+                                if dest_folder_path is None:
+                                    dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
+                                os.makedirs(dest_folder_path, exist_ok=True)
+                                src_file_path = os.path.join(source_folder_path, file)
+                                dest_file_path = os.path.join(dest_folder_path, file)
+                                shutil.copy(src_file_path, dest_file_path)
+                        else:
+                            if customer not in [pattern['label'] for pattern in patterns]:
+                                if dest_folder_path is None:
+                                    dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
+                                os.makedirs(dest_folder_path, exist_ok=True)
+                                src_file_path = os.path.join(source_folder_path, file)
+                                dest_file_path = os.path.join(dest_folder_path, file)
+                                shutil.copy(src_file_path, dest_file_path)  
+                                
                         break
+
+    return dest_folder_path
 
