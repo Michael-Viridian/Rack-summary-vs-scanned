@@ -1,0 +1,8 @@
+# Ignore everything
+*
+
+# Keep directories
+!*/
+
+# Track Python files
+!*.py
