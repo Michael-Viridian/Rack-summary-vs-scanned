@@ -145,7 +145,7 @@ def compare_reports():
 
 # compare_reports()
 
-generate_rack_folder(rack_prints_folder)
+generate_rack_folder(rack_prints_folder, customer_group_file=r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Projects\Truck Planning Automation\Unit-Optimisation\customer_groups.xlsx")
 
 
             

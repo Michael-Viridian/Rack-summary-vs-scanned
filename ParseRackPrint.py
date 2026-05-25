@@ -9,6 +9,12 @@ from datetime import datetime, timedelta
 from openpyxl import load_workbook, Workbook
 
 # =============================================================================
+# Function imports
+# =============================================================================
+
+from customer_patterns import _normalize_keywords, deliver_group_key
+
+# =============================================================================
 # Helper functions
 # =============================================================================
 
@@ -20,7 +26,6 @@ def prompt_str(prompt, default=None):
         elif raw != "":
             return raw
         
-
 # ----- robust date parser accepting multiple common formats -----
 def _parse_date_any(date_str: str) -> datetime:
     """Try multiple common date formats and normalize to a datetime."""
@@ -122,7 +127,13 @@ def generate_rack_summary_file(folder_path):
 
     return output_file, header
 
-def generate_rack_folder(source_folder_path, dest_folder_path=None):
+def generate_rack_folder(source_folder_path, dest_folder_path=None, customer_group_file=None):
+
+    customer_group_wb = load_workbook(customer_group_file, data_only=False) if customer_group_file else None
+    customer_group_ws = customer_group_wb.active if customer_group_wb else None
+
+    customer_names = [cell.value for cell in customer_group_ws['A'][1:]] if customer_group_ws else []
+    patterns = _normalize_keywords(customer_names)
 
     target_datetime = _parse_date_any(prompt_str("Enter the target date (DDMMYY)"))
     start_datetime = target_datetime - timedelta(hours=9, minutes=30)
@@ -134,17 +145,28 @@ def generate_rack_folder(source_folder_path, dest_folder_path=None):
     else:
         end_datetime = target_datetime + timedelta(hours=14, minutes=30)
 
-    local_or_OOT = prompt_str("Local or OOT?")  
-
     for file in os.listdir(source_folder_path):
         if file.endswith('.txt'):
             file_path = Path(source_folder_path) / file
             file_stats = file_path.stat()
             file_modified_datetime = datetime.fromtimestamp(file_stats.st_mtime)
             if start_datetime <= file_modified_datetime <= end_datetime:
-                if dest_folder_path is None:
-                    dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
-                os.makedirs(dest_folder_path, exist_ok=True)
-                src_file_path = os.path.join(source_folder_path, file)
-                dest_file_path = os.path.join(dest_folder_path, file)
-                shutil.copy(src_file_path, dest_file_path)
+
+                with open(file_path, 'r') as f:
+                    lines = f.readlines()
+
+                for line in lines:
+                    if line[0].isdigit():
+                        cleaned_line = line.strip()
+                        parts = cleaned_line.split('\t')
+                        customer = deliver_group_key(parts[2], patterns)[0]
+
+                        if customer in [pattern['label'] for pattern in patterns]:
+                            if dest_folder_path is None:
+                                dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
+                            os.makedirs(dest_folder_path, exist_ok=True)
+                            src_file_path = os.path.join(source_folder_path, file)
+                            dest_file_path = os.path.join(dest_folder_path, file)
+                            shutil.copy(src_file_path, dest_file_path)
+                        break
+
