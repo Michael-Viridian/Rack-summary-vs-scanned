@@ -9,7 +9,7 @@ from openpyxl import load_workbook, Workbook
 # Function imports
 # =============================================================================
 
-from ParseRackPrint import generate_rack_summary_file
+from ParseRackPrint import generate_rack_summary_file, generate_rack_folder
 
 # =============================================================================
 # Constants
@@ -143,7 +143,9 @@ def compare_reports():
     wb.save(output_file)
     return output_file
 
-compare_reports()
+# compare_reports()
+
+generate_rack_folder(rack_prints_folder)
 
 
             
