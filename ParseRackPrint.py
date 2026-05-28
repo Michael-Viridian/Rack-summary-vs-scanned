@@ -89,7 +89,7 @@ def _parse_date_any(date_str: str) -> datetime:
     raise ValueError(f"Unrecognized date format for '{date_str}'. Last parsing error: {last_error}")
 
 # =============================================================================
-# Main function
+# Main functions
 # =============================================================================
 
 def generate_rack_summary_file(folder_path):
@@ -127,7 +127,7 @@ def generate_rack_summary_file(folder_path):
 
     return output_file, header
 
-def generate_rack_folder(source_folder_path, customer_group_file=None, dest_folder_path=None):
+def generate_rack_folder(source_folder_path, customer_group_file, target_date, delivery_location):
 
     customer_group_wb = load_workbook(customer_group_file, data_only=False) if customer_group_file else None
     customer_group_ws = customer_group_wb.active if customer_group_wb else None
@@ -135,15 +135,15 @@ def generate_rack_folder(source_folder_path, customer_group_file=None, dest_fold
     customer_names = [cell.value for cell in customer_group_ws['A'][1:]] if customer_group_ws else []
     patterns = _normalize_keywords(customer_names)
 
-    target_datetime = _parse_date_any(prompt_str("Enter the target date (DD.MM.YY)"))
-    start_datetime = target_datetime - timedelta(hours=9, minutes=30) 
+    # target_datetime = _parse_date_any(prompt_str("Enter the target date (DD.MM.YY)"))
+    start_datetime = target_date - timedelta(hours=9, minutes=30) 
 
-    local_or_OOT = prompt_str("Local or OOT?")
+    # local_or_OOT = prompt_str("Local or OOT?")
 
-    if local_or_OOT == "OOT":
-        end_datetime = target_datetime + timedelta(hours=4)
+    if delivery_location == "OOT":
+        end_datetime = target_date + timedelta(hours=4)
     else:
-        end_datetime = target_datetime + timedelta(hours=14, minutes=30)
+        end_datetime = target_date + timedelta(hours=14, minutes=30)
 
     for file in os.listdir(source_folder_path):
         if file.endswith('.txt'):
@@ -161,10 +161,10 @@ def generate_rack_folder(source_folder_path, customer_group_file=None, dest_fold
                         parts = cleaned_line.split('\t')
                         customer = deliver_group_key(parts[2], patterns)[0]
 
-                        if local_or_OOT == "OOT":
+                        if delivery_location == "OOT":
                             if customer in [pattern['label'] for pattern in patterns]:
                                 if dest_folder_path is None:
-                                    dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
+                                    dest_folder_path = os.path.join(source_folder_path, f"{delivery_location}_racks_{target_date.strftime('%d%m%y')}_del")
                                 os.makedirs(dest_folder_path, exist_ok=True)
                                 src_file_path = os.path.join(source_folder_path, file)
                                 dest_file_path = os.path.join(dest_folder_path, file)
@@ -172,7 +172,7 @@ def generate_rack_folder(source_folder_path, customer_group_file=None, dest_fold
                         else:
                             if customer not in [pattern['label'] for pattern in patterns]:
                                 if dest_folder_path is None:
-                                    dest_folder_path = os.path.join(source_folder_path, f"{local_or_OOT}_racks_{target_datetime.strftime('%d%m%y')}_del")
+                                    dest_folder_path = os.path.join(source_folder_path, f"{delivery_location}_racks_{target_date.strftime('%d%m%y')}_del")
                                 os.makedirs(dest_folder_path, exist_ok=True)
                                 src_file_path = os.path.join(source_folder_path, file)
                                 dest_file_path = os.path.join(dest_folder_path, file)

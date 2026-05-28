@@ -15,18 +15,16 @@ from ParseRackPrint import generate_rack_summary_file, generate_rack_folder
 # Constants
 # =============================================================================
 
-rack_prints_folder = r'C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Test - RackPrints'
-delivered_glass_path = r'C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Test - RackPrints\Delivered_Glass.xlsx'
 customer_group_file=r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Projects\Truck Planning Automation\Unit-Optimisation\customer_groups.xlsx"
 
 # =============================================================================
 # Helper functions
 # =============================================================================
 
-def get_delivered_glass(delivered_glass_path):
+def get_delivered_glass(file_path):
 
     # Load workbook and first sheet
-    wb = load_workbook(delivered_glass_path, data_only=False, read_only=False)
+    wb = load_workbook(file_path, data_only=False, read_only=False)
     ws = wb.active
 
     headers = [cell.value for cell in ws[2]]
@@ -86,10 +84,10 @@ def get_rack_summary_glass(folder_path):
 # Main function
 # =============================================================================
 
-def compare_reports(folder_path):
+def compare_reports(parsed_folder_path, scanned_file_path):
 
-    rack_summary_glass, header = get_rack_summary_glass(folder_path)
-    delivered = get_delivered_glass(delivered_glass_path)
+    rack_summary_glass, header = get_rack_summary_glass(parsed_folder_path)
+    delivered = get_delivered_glass(scanned_file_path)
 
     matching_keys = set(rack_summary_glass.keys()) & set(delivered.keys())
     matching_values = [rack_summary_glass.get(key) for key in matching_keys]
@@ -140,14 +138,16 @@ def compare_reports(folder_path):
         for c, cell_value in enumerate(value, start=1):
             ws.cell(row=r, column=c, value=cell_value)
 
-    output_file = os.path.join(rack_prints_folder, 'Comparison Report.xlsx')
+    output_file = os.path.join(parsed_folder_path, 'Comparison Report.xlsx')
     wb.save(output_file)
     return output_file
 
-# compare_reports()
+def run_compare(folder_path, scanned_file_path, target_date, delivery_location):
 
-dest_folder = generate_rack_folder(rack_prints_folder, customer_group_file)
-compare_reports(dest_folder)
+    parsed_folder_path = generate_rack_folder(folder_path, customer_group_file, target_date, delivery_location)
+    rack_vs_scanned_comparison_report = compare_reports(parsed_folder_path, scanned_file_path)
+
+    return rack_vs_scanned_comparison_report
 
 
 
