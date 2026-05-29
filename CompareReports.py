@@ -16,6 +16,7 @@ from ParseRackPrint import generate_rack_summary_file, generate_rack_folder
 # =============================================================================
 
 customer_group_file=r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Projects\Truck Planning Automation\Unit-Optimisation\customer_groups.xlsx"
+rack_summaries_folder = r"P:\Public\Past 7 days RackPrints"
 
 # =============================================================================
 # Helper functions
@@ -142,12 +143,15 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     wb.save(output_file)
     return output_file
 
-def run_compare(folder_path, scanned_file_path, target_date, delivery_location):
+def run_compare(scanned_file_path, target_date, delivery_location):
 
-    parsed_folder_path = generate_rack_folder(folder_path, customer_group_file, target_date, delivery_location)
-    rack_vs_scanned_comparison_report = compare_reports(parsed_folder_path, scanned_file_path)
+    parsed_folder_path = generate_rack_folder(rack_summaries_folder, customer_group_file, target_date, delivery_location)
+    if parsed_folder_path == None:
+        print("No valid rack summaries available.")
+    else:
+        rack_vs_scanned_comparison_report = compare_reports(parsed_folder_path, scanned_file_path)
 
-    return rack_vs_scanned_comparison_report
+        return rack_vs_scanned_comparison_report
 
 
 

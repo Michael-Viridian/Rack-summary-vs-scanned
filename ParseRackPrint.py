@@ -115,7 +115,7 @@ def generate_rack_summary_file(folder_path):
             with open(file_path, 'r') as f:
                 lines = f.readlines()
 
-            for line in lines:
+            for line in lines[1:]:
                 if line[0].isdigit():
                     cleaned_line = line.strip()
                     parts = cleaned_line.split('\t')
@@ -127,7 +127,7 @@ def generate_rack_summary_file(folder_path):
 
     return output_file, header
 
-def generate_rack_folder(source_folder_path, customer_group_file, target_date, delivery_location):
+def generate_rack_folder(source_folder_path, customer_group_file, target_date, delivery_location, dest_folder_path=None):
 
     customer_group_wb = load_workbook(customer_group_file, data_only=False) if customer_group_file else None
     customer_group_ws = customer_group_wb.active if customer_group_wb else None
@@ -135,7 +135,7 @@ def generate_rack_folder(source_folder_path, customer_group_file, target_date, d
     customer_names = [cell.value for cell in customer_group_ws['A'][1:]] if customer_group_ws else []
     patterns = _normalize_keywords(customer_names)
 
-    # target_datetime = _parse_date_any(prompt_str("Enter the target date (DD.MM.YY)"))
+    target_date = _parse_date_any(target_date)
     start_datetime = target_date - timedelta(hours=9, minutes=30) 
 
     # local_or_OOT = prompt_str("Local or OOT?")
@@ -155,7 +155,7 @@ def generate_rack_folder(source_folder_path, customer_group_file, target_date, d
                 with open(file_path, 'r') as f:
                     lines = f.readlines()
 
-                for line in lines:
+                for line in lines[1:]:
                     if line[0].isdigit():
                         cleaned_line = line.strip()
                         parts = cleaned_line.split('\t')

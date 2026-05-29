@@ -18,6 +18,8 @@ from watchdog.events import FileSystemEventHandler
 output_dir = Path(r"P:\Public\Past 7 days RackPrints")
 output_dir.mkdir(parents=True, exist_ok=True)
 
+last_seen = {}
+
 # =============================================================================
 # Ensure only 1 program can run
 # =============================================================================
@@ -53,13 +55,33 @@ atexit.register(remove_lock)
 # Helper functions
 # =============================================================================
 
-def safe_copy(src, dest, retries=5, delay=1):
+def safe_copy(src, dest, retries=5, delay=0.5):
     for _ in range(retries):
         try:
             shutil.copy2(src, dest)
             return True
         except Exception:
             time.sleep(delay)
+    return False
+
+def should_skip(path):
+    stat = os.stat(path)
+    sig = (stat.st_size, stat.st_mtime)
+
+    if path in last_seen and last_seen[path] == sig:
+        return True
+
+    last_seen[path] = sig
+    return False
+
+def wait_until_stable(path, delay=0.2, retries=5):
+    last_size = -1
+    for _ in range(retries):
+        size = os.path.getsize(path)
+        if size == last_size:
+            return True
+        last_size = size
+        time.sleep(delay)
     return False
 
 # =============================================================================
@@ -114,21 +136,34 @@ class Handler(FileSystemEventHandler):
     def __init__(self, settle_seconds: float = 0.5):
         self.settle_seconds = settle_seconds
 
-    def on_created(self, event):
+    def on_modified(self, event):
+
+        time.sleep(self.settle_seconds)
+
         if event.is_directory:
             return
-        time.sleep(self.settle_seconds)
-     
+        
         if not output_dir.exists():
-            print("Output directory not available (network drive down?)")
-            time.sleep(5)
+                print("Output directory not available (network drive down?)")
+                time.sleep(5)
+                return
+        
+        if should_skip(event.src_path):
             return
+        
+        if wait_until_stable(event.src_path):
+            file_path = output_dir / Path(event.src_path).name
 
-        file_path = output_dir / Path(event.src_path).name
-        if safe_copy(event.src_path, file_path):
-            print(f"Copied: {file_path}")
-        else:
-            print(f"Failed to copy: {file_path}")
+            if file_path.exists():
+                if safe_copy(event.src_path, file_path):
+                    print(f"Overwrote: {file_path}")
+                else:
+                    print(f"Failed to overwrite: {file_path}")
+            else:
+                if safe_copy(event.src_path, file_path):
+                    print(f"Copied: {file_path}")
+                else:
+                    print(f"Failed to copy: {file_path}")
 
     def on_deleted(self, event):
         print("Watchdog received deleted event - % s." % event.src_path)
