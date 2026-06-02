@@ -105,7 +105,7 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     for index, value in enumerate(rack_summary_glass.values(), start=3):
         for col_index, cell_value in enumerate(value, start=1):
             ws_rack.cell(row=index, column=col_index, value=cell_value)
-        if value[0] in matching_values[0]:
+        if matching_values and value[0] in matching_values[0]:
             ws_rack.cell(row=index, column=len(header) + 1, value="Match")
         else:
             ws_rack.cell(row=index, column=len(header) + 1, value="No Match")
@@ -119,7 +119,7 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     for index, value in enumerate(delivered.values(), start=3):
         for col_index, cell_value in enumerate(value, start=1):
             ws_scanned.cell(row=index, column=col_index, value=cell_value)
-        if value[0] in matching_values[0]:
+        if matching_values and value[0] in matching_values[0]:
             ws_scanned.cell(row=index, column=len(header) + 1, value="Match")
         else:
             ws_scanned.cell(row=index, column=len(header) + 1, value="No Match")
@@ -128,7 +128,9 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     wb.save(output_file)
     return output_file
 
-def run_compare(scanned_file_path, target_date, delivery_location):
+def run_compare(scanned_file_path, target_date, delivery_location, runs):
+
+    print(runs)
 
     parsed_folder_path = generate_rack_folder(rack_summaries_folder, customer_group_file, target_date, delivery_location)
     if parsed_folder_path == None:

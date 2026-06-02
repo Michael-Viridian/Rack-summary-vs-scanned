@@ -98,7 +98,7 @@ class RadiobuttonFrame(ttk.Frame):
         self.variable.set(value)
 
 class DropdownFrame(ttk.Frame):
-    def __init__(self, master, data):
+    def __init__(self, master, data=None):
         super().__init__(master)
 
         self.dropdowns = []
@@ -119,6 +119,12 @@ class DropdownFrame(ttk.Frame):
             opt for opt in self.data if opt not in selected_values
         ]
 
+        if len(self.dropdowns) > 0:
+            remaining = [opt for opt in remaining if opt != "All"]
+
+        if not remaining:
+            return
+
         combobox = ttk.Combobox(self, values=remaining, state="readonly", bootstyle="primary")
         combobox.grid(row=len(self.dropdowns) + 1, column=0, sticky="ew", pady=(0, 10))
 
@@ -137,6 +143,16 @@ class DropdownFrame(ttk.Frame):
         if selected_value == "All": 
             return
         
+        self.create_dropdown()
+
+    def set_values(self, values):
+        self.data = values
+
+        for dropdown in self.dropdowns:
+            dropdown.destroy()
+
+        self.dropdowns = []
+
         self.create_dropdown()
     
 class App(ttk.Window):
@@ -157,7 +173,7 @@ class App(ttk.Window):
         container = ttk.Frame(self, padding=5)
         container.grid(row=1, column=1, sticky="nsew")
         container.grid_columnconfigure(0, weight=1)
-
+        
         title_frame = TitleFrame(container)
         title_frame.grid(row=0, column=0, sticky="ew", pady=10)
 
@@ -169,8 +185,9 @@ class App(ttk.Window):
 
         self.radiobutton_frame = RadiobuttonFrame(container, "Delivery Location", values=["Local", "OOT", "All"])
         self.radiobutton_frame.grid(row=3, column=0, sticky="ew", pady=10)
+        self.radiobutton_frame.variable.trace_add("write", self.update_dropdown)
 
-        self.Dropdown_frame = DropdownFrame(container, data=["All", "8327: Nelson", "8329: Dunedin"])
+        self.Dropdown_frame = DropdownFrame(container, data=["All"])
         self.Dropdown_frame.grid(row=4, column=0, sticky="ew", pady=10)
 
         self.button = ttk.Button(
@@ -185,13 +202,28 @@ class App(ttk.Window):
         filename = run_compare(
             scanned_file_path=self.File_frame.file_path,
             target_date=self.Date_frame.get_date(), 
-            delivery_location=self.radiobutton_frame.get()
+            delivery_location=self.radiobutton_frame.get(),
+            runs=self.Dropdown_frame.dropdowns
         )
         
         messagebox.showinfo(
             "Success",
             f"Rack Summaries vs Scanned Glass Comparison Report Generated:\n{filename}"
         )
+
+    def update_dropdown(self, *args):
+        choice = self.radiobutton_frame.get()
+
+        if choice == "OOT":
+            data = ["All", "8327: Nelson", "8329: Dunedin"]
+        elif choice == "Local":
+            data = ["All", "8327: Nelson", "8329: Dunedin"]
+        elif choice == "All":
+            data = ["All"]
+        else:
+            data = ["All"]
+
+        self.Dropdown_frame.set_values(data)
 
 app = App()
 app.mainloop()
