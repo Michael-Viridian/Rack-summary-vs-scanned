@@ -15,7 +15,7 @@ from ParseRackPrint import generate_rack_summary_file, generate_rack_folder
 # Constants
 # =============================================================================
 
-customer_group_file=r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Projects\Truck Planning Automation\Unit-Optimisation\customer_groups.xlsx"
+customer_group_file=r"J:\Duplicate Rack Summaries\customer_groups.xlsx"
 rack_summaries_folder = r"P:\Public\Past 7 days RackPrints"
 
 # =============================================================================
@@ -93,51 +93,36 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     matching_keys = set(rack_summary_glass.keys()) & set(delivered.keys())
     matching_values = [rack_summary_glass.get(key) for key in matching_keys]
 
-    delivered_only_keys = set(delivered.keys()) - set(rack_summary_glass.keys())
-    delivered_only_values = [delivered.get(key) for key in delivered_only_keys]
-
-    rack_summary_only_keys = set(rack_summary_glass.keys()) - set(delivered.keys())
-    rack_summary_only_values = [rack_summary_glass.get(key) for key in rack_summary_only_keys]
-
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Rack Summaries vs Delivered"
 
-    ws['A1'] = "Matching Units"
+    ws_rack = wb.create_sheet("Rack Summaries", 0)
+
+    ws_rack['A1'] = "Rack Summary Glass"
     for value in header:
         col_index = header.index(value) + 1
-        ws.cell(row=2, column=col_index, value=value)   
-    for index, value in enumerate(matching_values, start=3):
+        ws_rack.cell(row=2, column=col_index, value=value)   
+    ws_rack.cell(row=2, column=len(header) + 1, value="Match Status")
+    for index, value in enumerate(rack_summary_glass.values(), start=3):
         for col_index, cell_value in enumerate(value, start=1):
-            ws.cell(row=index, column=col_index, value=cell_value)
+            ws_rack.cell(row=index, column=col_index, value=cell_value)
+        if value[0] in matching_values[0]:
+            ws_rack.cell(row=index, column=len(header) + 1, value="Match")
+        else:
+            ws_rack.cell(row=index, column=len(header) + 1, value="No Match")
 
-    delivered_start_row = len(matching_values) + 4
-    ws[f'A{delivered_start_row - 1}'] = "Delivered Only"
-
-    # Header
-    for col, value in enumerate(header, start=1):
-        ws.cell(row=delivered_start_row, column=col, value=value)
-
-    # Data (start AFTER header)
-    for r, value in enumerate(delivered_only_values, start=delivered_start_row + 1):
-        for c, cell_value in enumerate(value, start=1):
-            ws.cell(row=r, column=c, value=cell_value)
-
-    rack_summary_start_row = (
-        delivered_start_row
-        + len(delivered_only_values)
-        + 2
-    )
-    ws[f'A{rack_summary_start_row - 1}'] = "Rack Summaries Only"
-
-    # Header
-    for col, value in enumerate(header, start=1):
-        ws.cell(row=rack_summary_start_row, column=col, value=value)
-
-    # Data
-    for r, value in enumerate(rack_summary_only_values, start=rack_summary_start_row + 1):
-        for c, cell_value in enumerate(value, start=1):
-            ws.cell(row=r, column=c, value=cell_value)
+    ws_scanned = wb.create_sheet("Scanned Glass", 1)
+    ws_scanned['A1'] = "Scanned Glass"
+    for value in header:
+        col_index = header.index(value) + 1
+        ws_scanned.cell(row=2, column=col_index, value=value)  
+    ws_scanned.cell(row=2, column=len(header) + 1, value="Match Status")
+    for index, value in enumerate(delivered.values(), start=3):
+        for col_index, cell_value in enumerate(value, start=1):
+            ws_scanned.cell(row=index, column=col_index, value=cell_value)
+        if value[0] in matching_values[0]:
+            ws_scanned.cell(row=index, column=len(header) + 1, value="Match")
+        else:
+            ws_scanned.cell(row=index, column=len(header) + 1, value="No Match")
 
     output_file = os.path.join(parsed_folder_path, 'Comparison Report.xlsx')
     wb.save(output_file)

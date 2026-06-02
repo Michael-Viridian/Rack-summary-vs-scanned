@@ -91,7 +91,7 @@ def wait_until_stable(path, delay=0.2, retries=5):
 class OnMyWatch:
     
     # Set the directory on watch (use raw string for Windows path)
-    watchDirectory = r"C:\Users\MEVERETT\OneDrive - Viridian Glass Limited Partnership\Test - RackPrints"
+    watchDirectory = r"P:\Public\RackPrints"
 
     def __init__(self):
         self.observer = Observer()

@@ -133,12 +133,15 @@ def generate_rack_folder(source_folder_path, customer_group_file, target_date, d
     customer_group_ws = customer_group_wb.active if customer_group_wb else None
 
     customer_names = [cell.value for cell in customer_group_ws['A'][1:]] if customer_group_ws else []
+    customer_groups = [cell.value for cell in customer_group_ws['C'][1:]] if customer_group_ws else []
     patterns = _normalize_keywords(customer_names)
+
+    customer_pattern_and_group = {}
+    for name, group in zip([pattern['label'] for pattern in patterns], customer_groups):
+        customer_pattern_and_group[name] = group
 
     target_date = _parse_date_any(target_date)
     start_datetime = target_date - timedelta(hours=9, minutes=30) 
-
-    # local_or_OOT = prompt_str("Local or OOT?")
 
     if delivery_location == "OOT":
         end_datetime = target_date + timedelta(hours=4)
@@ -150,7 +153,7 @@ def generate_rack_folder(source_folder_path, customer_group_file, target_date, d
             file_path = Path(source_folder_path) / file
             file_stats = file_path.stat()
             file_modified_datetime = datetime.fromtimestamp(file_stats.st_mtime)
-            if start_datetime <= file_modified_datetime <= end_datetime:
+            if start_datetime <= file_modified_datetime <= end_datetime: 
 
                 with open(file_path, 'r') as f:
                     lines = f.readlines()
