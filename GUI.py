@@ -154,13 +154,16 @@ class DropdownFrame(ttk.Frame):
         self.dropdowns = []
 
         self.create_dropdown()
+
+    def get_selected(self):
+        return [dropdown.get() for dropdown in self.dropdowns]
     
 class App(ttk.Window):
     def __init__(self):
         super().__init__(themename="flatly")
 
         self.title("Rack summaries vs Scanned")
-        self.geometry("500x300")
+        self.geometry("1440x1024")
         
         self.grid_columnconfigure(0, weight=4)
         self.grid_columnconfigure(1, weight=1)
@@ -203,10 +206,16 @@ class App(ttk.Window):
             scanned_file_path=self.File_frame.file_path,
             target_date=self.Date_frame.get_date(), 
             delivery_location=self.radiobutton_frame.get(),
-            runs=self.Dropdown_frame.dropdowns
+            runs=self.Dropdown_frame.get_selected()
         )
         
-        messagebox.showinfo(
+        if filename is None:
+            messagebox.showerror(
+                "Error",
+                "Failed to generate comparison report."
+            )
+        else:
+            messagebox.showinfo(
             "Success",
             f"Rack Summaries vs Scanned Glass Comparison Report Generated:\n{filename}"
         )
@@ -215,9 +224,9 @@ class App(ttk.Window):
         choice = self.radiobutton_frame.get()
 
         if choice == "OOT":
-            data = ["All", "8327: Nelson", "8329: Dunedin"]
+            data = ["All", "8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
         elif choice == "Local":
-            data = ["All", "8327: Nelson", "8329: Dunedin"]
+            data = ["All", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
         elif choice == "All":
             data = ["All"]
         else:

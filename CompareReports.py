@@ -22,7 +22,9 @@ rack_summaries_folder = r"P:\Public\Past 7 days RackPrints"
 # Helper functions
 # =============================================================================
 
-def get_delivered_glass(file_path):
+def get_delivered_glass(file_path, runs):
+
+    runs = [run.split('-')[0] for run in runs]
 
     # Load workbook and first sheet
     wb = load_workbook(file_path, data_only=False, read_only=False)
@@ -36,7 +38,9 @@ def get_delivered_glass(file_path):
 
     new_data = []
     for row in ws.iter_rows(values_only=True):
-        new_data.append([row[col_index[h]] for h in new_order])
+        run = row[col_index['Despatch Run']]
+        if str(run) in runs:
+            new_data.append([row[col_index[h]] for h in new_order])
 
     wb.remove(ws)
     ws = wb.create_sheet("Reordered")  
@@ -85,13 +89,14 @@ def get_rack_summary_glass(folder_path):
 # Main function
 # =============================================================================
 
-def compare_reports(parsed_folder_path, scanned_file_path):
+def compare_reports(parsed_folder_path, scanned_file_path, runs):
 
     rack_summary_glass, header = get_rack_summary_glass(parsed_folder_path)
-    delivered = get_delivered_glass(scanned_file_path)
+    delivered = get_delivered_glass(scanned_file_path, runs)
 
     matching_keys = set(rack_summary_glass.keys()) & set(delivered.keys())
     matching_values = [rack_summary_glass.get(key) for key in matching_keys]
+    matching_piece_ids = [matching_value[0] for matching_value in matching_values if matching_value]
 
     wb = Workbook()
 
@@ -105,7 +110,7 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     for index, value in enumerate(rack_summary_glass.values(), start=3):
         for col_index, cell_value in enumerate(value, start=1):
             ws_rack.cell(row=index, column=col_index, value=cell_value)
-        if matching_values and value[0] in matching_values[0]:
+        if matching_piece_ids and value[0] in matching_piece_ids:
             ws_rack.cell(row=index, column=len(header) + 1, value="Match")
         else:
             ws_rack.cell(row=index, column=len(header) + 1, value="No Match")
@@ -119,7 +124,7 @@ def compare_reports(parsed_folder_path, scanned_file_path):
     for index, value in enumerate(delivered.values(), start=3):
         for col_index, cell_value in enumerate(value, start=1):
             ws_scanned.cell(row=index, column=col_index, value=cell_value)
-        if matching_values and value[0] in matching_values[0]:
+        if matching_piece_ids and value[0] in matching_piece_ids:
             ws_scanned.cell(row=index, column=len(header) + 1, value="Match")
         else:
             ws_scanned.cell(row=index, column=len(header) + 1, value="No Match")
@@ -130,13 +135,20 @@ def compare_reports(parsed_folder_path, scanned_file_path):
 
 def run_compare(scanned_file_path, target_date, delivery_location, runs):
 
-    print(runs)
-
-    parsed_folder_path = generate_rack_folder(rack_summaries_folder, customer_group_file, target_date, delivery_location)
-    if parsed_folder_path == None:
-        print("No valid rack summaries available.")
+    if delivery_location == "OOT" and runs == ["All"]:
+        runs = ["8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
+    elif delivery_location == "Local" and runs == ["All"]:
+        runs = ["8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
+    elif delivery_location == "All" and runs == ["All"]:
+        runs = ["8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
     else:
-        rack_vs_scanned_comparison_report = compare_reports(parsed_folder_path, scanned_file_path)
+        pass
+
+    parsed_folder_path = generate_rack_folder(rack_summaries_folder, customer_group_file, target_date, delivery_location, runs)
+    if parsed_folder_path == None:
+        return None
+    else:
+        rack_vs_scanned_comparison_report = compare_reports(parsed_folder_path, scanned_file_path, runs)
 
         return rack_vs_scanned_comparison_report
 
