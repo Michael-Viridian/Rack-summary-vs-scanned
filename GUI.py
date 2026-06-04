@@ -10,7 +10,9 @@ from ttkbootstrap.widgets import DateEntry
 # Function imports
 # =============================================================================
 
-from CompareReports import run_compare
+# Defer importing the potentially heavy `CompareReports` module until the
+# report is run. This keeps static analysis (PyInstaller) from pulling in
+# large dependencies unnecessarily when building the GUI-only exe.
 
 # =============================================================================
 # Main function
@@ -31,15 +33,30 @@ class TitleFrame(ttk.Frame):
         )
         self.label.grid(row=0, column=0, sticky="ew", pady=(20, 20))
 
+class SubTitleFrame(ttk.Frame):
+    def __init__(self, master, text):
+        super().__init__(master)
+
+        self.grid_columnconfigure(0, weight=1)
+
+        self.label = ttk.Label(
+            self, 
+            text=text, 
+            bootstyle="primary", 
+            font=("Helvetica", 12, "bold"),
+            anchor="center"
+        )
+        self.label.grid(row=0, column=0, sticky="ew", pady=(10, 10))
+
 class FileFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
         self.grid_columnconfigure(0, weight=1)
 
-        self.button = ttk.Button(self, text="Select File", command=self.open_file, bootstyle="primary")
+        self.button = ttk.Button(self, text="Select File", command=self.open_file, bootstyle="primary", style="outline")
         self.button.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        self.label = ttk.Label(self, text="No file selected", bootstyle="secondary")
+        self.label = ttk.Label(self, text="No file selected", bootstyle="inverse-dark")
         self.label.grid(row=1, column=0, sticky="ew", pady=(0, 10))
 
     def open_file(self):
@@ -53,7 +70,7 @@ class DateFrame(ttk.Frame):
 
         self.grid_columnconfigure(0, weight=1)
 
-        self.label = ttk.Label(self, text="Select Date", bootstyle="secondary")
+        self.label = ttk.Label(self, text="Select Date", bootstyle="info")
         self.label.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         self.date_entry = DateEntry(
@@ -77,7 +94,7 @@ class RadiobuttonFrame(ttk.Frame):
         self.radiobuttons = []
         self.variable = ttk.StringVar(value="")
 
-        self.title_label = ttk.Label(self, text=self.title, bootstyle="secondary")
+        self.title_label = ttk.Label(self, text=self.title, bootstyle="Primary")
         self.title_label.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         for i, value in enumerate(self.values, start=1):
@@ -103,7 +120,7 @@ class DropdownFrame(ttk.Frame):
 
         self.dropdowns = []
         self.data = data
-        self.label = ttk.Label(self, text="Select Run (s)", bootstyle="secondary")
+        self.label = ttk.Label(self, text="Select Run (s)", bootstyle="info")
         self.label.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         self.create_dropdown()
@@ -158,9 +175,27 @@ class DropdownFrame(ttk.Frame):
     def get_selected(self):
         return [dropdown.get() for dropdown in self.dropdowns]
     
+class SplashScreen(ttk.Frame):
+    def __init__(self):
+        # Create a borderless window
+        self.root = ttk.Window(themename="superhero")
+        self.root.overrideredirect(True)
+
+        self.root.mainloop()
+
+    def load_application(self):
+    
+        self.root.after(5, self.launch_main_app)
+
+    def launch_main_app(self):
+        # Destroy the splash window
+        self.root.destroy()
+        # Launch the actual main application window
+        App()
+    
 class App(ttk.Window):
     def __init__(self):
-        super().__init__(themename="flatly")
+        super().__init__(themename="darkly")
 
         self.title("Rack summaries vs Scanned")
         self.geometry("1440x1024")
@@ -180,36 +215,67 @@ class App(ttk.Window):
         title_frame = TitleFrame(container)
         title_frame.grid(row=0, column=0, sticky="ew", pady=10)
 
-        self.File_frame = FileFrame(container)
-        self.File_frame.grid(row=1, column=0, sticky="ew", pady=10)
+        self.Subtitle_frame_scanned = SubTitleFrame(container, "Select Scanned Glass Report")
+        self.Subtitle_frame_scanned.grid(row=1, column=0, sticky="ew", pady=10)
+
+        self.File_frame_scanned = FileFrame(container)
+        self.File_frame_scanned.grid(row=2, column=0, sticky="ew", pady=10)
 
         self.Date_frame = DateFrame(container)
-        self.Date_frame.grid(row=2, column=0, sticky="ew", pady=10)
+        self.Date_frame.grid(row=3, column=0, sticky="ew", pady=10)
 
         self.radiobutton_frame = RadiobuttonFrame(container, "Delivery Location", values=["Local", "OOT", "All"])
-        self.radiobutton_frame.grid(row=3, column=0, sticky="ew", pady=10)
+        self.radiobutton_frame.grid(row=4, column=0, sticky="ew", pady=10)
         self.radiobutton_frame.variable.trace_add("write", self.update_dropdown)
 
         self.Dropdown_frame = DropdownFrame(container, data=["All"])
-        self.Dropdown_frame.grid(row=4, column=0, sticky="ew", pady=10)
+        self.Dropdown_frame.grid(row=5, column=0, sticky="ew", pady=10)
 
-        self.button = ttk.Button(
+        self.button_rack_scanned = ttk.Button(
             container, 
             text="Run rack summaries vs scanned report",
-            command=self.button_callback, 
-            bootstyle="success"
+            command=self.rack_scanned_button_callback, 
+            bootstyle="success-outline"
         )
-        self.button.grid(row=5, column=0, sticky="ew", pady=(10, 0))
+        self.button_rack_scanned.grid(row=6, column=0, sticky="ew", pady=(10, 0))
 
-    def button_callback(self):
-        filename = run_compare(
-            scanned_file_path=self.File_frame.file_path,
+        self.Subtitle_frame_manifest = SubTitleFrame(container, "Select Manifest Glass Report")
+        self.Subtitle_frame_manifest.grid(row=7, column=0, sticky="ew", pady=10)
+
+        self.File_frame_manifest = FileFrame(container)
+        self.File_frame_manifest.grid(row=8, column=0, sticky="ew", pady=10)
+
+        self.button_scanned_manifest = ttk.Button(
+            container, 
+            text="Run scanned discrepancies vs manifest report",
+            command=self.scanned_manifest_button_callback, 
+            bootstyle="success-outline"
+        )
+        self.button_scanned_manifest.grid(row=9, column=0, sticky="ew", pady=(10, 0))
+
+        self.button_rack_manifest = ttk.Button(
+            container, 
+            text="Run rack discrepancies vs manifest report",
+            command=self.rack_manifest_button_callback, 
+            bootstyle="success-outline"
+        )
+        self.button_rack_manifest.grid(row=10, column=0, sticky="ew", pady=(10, 0))
+
+    def rack_scanned_button_callback(self):
+        try:
+            from CompareReports import run_rack_scanned_compare
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import CompareReports: {e}")
+            return
+
+        self.rack_scanned_filename = run_rack_scanned_compare(
+            scanned_file_path=getattr(self.File_frame_scanned, 'file_path', None),
             target_date=self.Date_frame.get_date(), 
             delivery_location=self.radiobutton_frame.get(),
             runs=self.Dropdown_frame.get_selected()
         )
         
-        if filename is None:
+        if self.rack_scanned_filename is None:
             messagebox.showerror(
                 "Error",
                 "Failed to generate comparison report."
@@ -217,8 +283,36 @@ class App(ttk.Window):
         else:
             messagebox.showinfo(
             "Success",
-            f"Rack Summaries vs Scanned Glass Comparison Report Generated:\n{filename}"
+            f"Rack Summaries vs Scanned Glass Comparison Report Generated:\n{self.rack_scanned_filename}"
         )
+            
+    def scanned_manifest_button_callback(self):
+        try:
+            from CompareReports import compare_scanned_discrepancy_manifest_reports
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import CompareReports: {e}")
+            return
+        
+        compare_scanned_discrepancy_manifest_reports(
+            scanned_discrepancy_file_path=self.rack_scanned_filename,
+            manifest_file_path=getattr(self.File_frame_manifest, 'file_path', None)
+        )
+
+        messagebox.showinfo("Info", "Check comparison report for manifest status.")
+
+    def rack_manifest_button_callback(self):
+        try:
+            from CompareReports import compare_rack_discrepancy_manifest_reports
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import CompareReports: {e}")
+            return
+        
+        compare_rack_discrepancy_manifest_reports(
+            rack_discrepancy_file_path=self.rack_scanned_filename,
+            manifest_file_path=getattr(self.File_frame_manifest, 'file_path', None)
+        )
+
+        messagebox.showinfo("Info", "Check comparison report for manifest status.")
 
     def update_dropdown(self, *args):
         choice = self.radiobutton_frame.get()
@@ -226,7 +320,8 @@ class App(ttk.Window):
         if choice == "OOT":
             data = ["All", "8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
         elif choice == "Local":
-            data = ["All", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
+            # data = ["All", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
+            data = ["All"]
         elif choice == "All":
             data = ["All"]
         else:
@@ -234,5 +329,4 @@ class App(ttk.Window):
 
         self.Dropdown_frame.set_values(data)
 
-app = App()
-app.mainloop()
+SplashScreen()
