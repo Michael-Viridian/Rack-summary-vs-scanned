@@ -2,12 +2,13 @@
 # Module imports
 # =============================================================================
 
-import os, sys
+import os
 import time
 import shutil
-import atexit
+import tempfile
 from pathlib import Path
 from datetime import datetime, timedelta
+from filelock import FileLock, Timeout
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -19,37 +20,6 @@ output_dir = Path(r"P:\Public\Past 7 days RackPrints")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 last_seen = {}
-
-# =============================================================================
-# Ensure only 1 program can run
-# =============================================================================
-
-LOCK_FILE = "watchdog.lock"
-
-def remove_lock():
-    if os.path.exists(LOCK_FILE):
-        os.remove(LOCK_FILE)
-
-# Check existing lock
-if os.path.exists(LOCK_FILE):
-    try:
-        with open(LOCK_FILE, "r") as f:
-            pid = int(f.read())
-
-        os.kill(pid, 0)  # check if process exists
-        print("Already running!")
-        sys.exit()
-
-    except Exception:
-        print("Stale lock detected, removing...")
-        os.remove(LOCK_FILE)
-
-# Create new lock
-with open(LOCK_FILE, "w") as f:
-    f.write(str(os.getpid()))
-
-atexit.register(remove_lock)
-
 
 # =============================================================================
 # Helper functions
@@ -168,15 +138,29 @@ class Handler(FileSystemEventHandler):
     def on_deleted(self, event):
         print("Watchdog received deleted event - % s." % event.src_path)
 
+if __name__ == "__main__":
+    lock_path = tempfile.gettempdir() + "/watchdog.lock"
 
-if __name__ == '__main__':
-    while True:
-        try:
-            print("Starting watchdog...")
-            watch = OnMyWatch()
-            watch.run()
-        except Exception as e:
-            print(f"Watchdog crashed: {e}")
-            time.sleep(5)  # prevent rapid crash loop
+    lock = FileLock(lock_path, timeout=0)
+
+    try:
+        with lock:
+            print("Watchdog started")
+
+            while True:
+                try:
+                    print("Starting watchdog...")
+                    watch = OnMyWatch()
+                    watch.run()
+                except Exception as e:
+                    print(f"Watchdog crashed: {e}")
+                    time.sleep(5)
+
+    except Timeout:
+        print("Another instance is already running")
+
+    except KeyboardInterrupt:
+        print("Watchdog stopped manually")
+
             
 

@@ -2,7 +2,7 @@
 # Module imports
 # =============================================================================
 
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, Toplevel
 import ttkbootstrap as ttk
 from ttkbootstrap.widgets import DateEntry
 
@@ -27,7 +27,7 @@ class TitleFrame(ttk.Frame):
         self.label = ttk.Label(
             self, 
             text="Rack Summaries vs Scanned Glass", 
-            bootstyle="primary", 
+            bootstyle="bg", 
             font=("Helvetica", 16, "bold"),
             anchor="center"
         )
@@ -42,7 +42,7 @@ class SubTitleFrame(ttk.Frame):
         self.label = ttk.Label(
             self, 
             text=text, 
-            bootstyle="primary", 
+            bootstyle="bg", 
             font=("Helvetica", 12, "bold"),
             anchor="center"
         )
@@ -54,9 +54,19 @@ class FileFrame(ttk.Frame):
 
         self.grid_columnconfigure(0, weight=1)
 
-        self.button = ttk.Button(self, text="Select File", command=self.open_file, bootstyle="primary", style="outline")
-        self.button.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        self.label = ttk.Label(self, text="No file selected", bootstyle="inverse-dark")
+        self.border_frame = ttk.Frame(self, bootstyle="secondary", padding=2)
+        self.border_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        self.border_frame.grid_columnconfigure(0, weight=1)
+
+        self.button = ttk.Button(
+            self.border_frame,
+            text="Select File",
+            command=self.open_file,
+            bootstyle="success-outline"
+        )
+        self.button.grid(row=0, column=0, sticky="ew")
+        self.label = ttk.Label(self, text="No file selected", bootstyle="bg")
         self.label.grid(row=1, column=0, sticky="ew", pady=(0, 10))
 
     def open_file(self):
@@ -70,12 +80,12 @@ class DateFrame(ttk.Frame):
 
         self.grid_columnconfigure(0, weight=1)
 
-        self.label = ttk.Label(self, text="Select Date", bootstyle="info")
+        self.label = ttk.Label(self, text="Select Date", bootstyle="bg")
         self.label.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         self.date_entry = DateEntry(
             self,
-            bootstyle="primary",
+            bootstyle="success",
             dateformat="%Y-%m-%d"   # clean ISO format
         )
         self.date_entry.grid(row=1, column=0, sticky="ew", pady=(0, 10), padx=20)
@@ -94,7 +104,7 @@ class RadiobuttonFrame(ttk.Frame):
         self.radiobuttons = []
         self.variable = ttk.StringVar(value="")
 
-        self.title_label = ttk.Label(self, text=self.title, bootstyle="Primary")
+        self.title_label = ttk.Label(self, text=self.title, bootstyle="bg")
         self.title_label.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         for i, value in enumerate(self.values, start=1):
@@ -103,7 +113,7 @@ class RadiobuttonFrame(ttk.Frame):
                 text=value,
                 value=value,
                 variable=self.variable,
-                bootstyle="info"
+                bootstyle="bg"
             )
             radiobutton.grid(row=i, column=0, sticky="ew", padx=20, pady=5)
             self.radiobuttons.append(radiobutton)
@@ -120,7 +130,7 @@ class DropdownFrame(ttk.Frame):
 
         self.dropdowns = []
         self.data = data
-        self.label = ttk.Label(self, text="Select Run (s)", bootstyle="info")
+        self.label = ttk.Label(self, text="Select Run (s)", bootstyle="bg")
         self.label.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         self.create_dropdown()
@@ -142,7 +152,7 @@ class DropdownFrame(ttk.Frame):
         if not remaining:
             return
 
-        combobox = ttk.Combobox(self, values=remaining, state="readonly", bootstyle="primary")
+        combobox = ttk.Combobox(self, values=remaining, state="readonly", bootstyle="success")
         combobox.grid(row=len(self.dropdowns) + 1, column=0, sticky="ew", pady=(0, 10))
 
         combobox.bind("<<ComboboxSelected>>", lambda e, c=combobox: self.on_selection(c))
@@ -175,27 +185,9 @@ class DropdownFrame(ttk.Frame):
     def get_selected(self):
         return [dropdown.get() for dropdown in self.dropdowns]
     
-class SplashScreen(ttk.Frame):
-    def __init__(self):
-        # Create a borderless window
-        self.root = ttk.Window(themename="superhero")
-        self.root.overrideredirect(True)
-
-        self.root.mainloop()
-
-    def load_application(self):
-    
-        self.root.after(5, self.launch_main_app)
-
-    def launch_main_app(self):
-        # Destroy the splash window
-        self.root.destroy()
-        # Launch the actual main application window
-        App()
-    
 class App(ttk.Window):
     def __init__(self):
-        super().__init__(themename="darkly")
+        super().__init__(themename="lumen")
 
         self.title("Rack summaries vs Scanned")
         self.geometry("1440x1024")
@@ -235,7 +227,7 @@ class App(ttk.Window):
             container, 
             text="Run rack summaries vs scanned report",
             command=self.rack_scanned_button_callback, 
-            bootstyle="success-outline"
+            bootstyle="success"
         )
         self.button_rack_scanned.grid(row=6, column=0, sticky="ew", pady=(10, 0))
 
@@ -243,23 +235,23 @@ class App(ttk.Window):
         self.Subtitle_frame_manifest.grid(row=7, column=0, sticky="ew", pady=10)
 
         self.File_frame_manifest = FileFrame(container)
-        self.File_frame_manifest.grid(row=8, column=0, sticky="ew", pady=10)
+        self.File_frame_manifest.grid(row=9, column=0, sticky="ew", pady=10)
 
         self.button_scanned_manifest = ttk.Button(
             container, 
             text="Run scanned discrepancies vs manifest report",
             command=self.scanned_manifest_button_callback, 
-            bootstyle="success-outline"
+            bootstyle="success"
         )
-        self.button_scanned_manifest.grid(row=9, column=0, sticky="ew", pady=(10, 0))
+        self.button_scanned_manifest.grid(row=10, column=0, sticky="ew", pady=(10, 0))
 
         self.button_rack_manifest = ttk.Button(
             container, 
             text="Run rack discrepancies vs manifest report",
             command=self.rack_manifest_button_callback, 
-            bootstyle="success-outline"
+            bootstyle="success"
         )
-        self.button_rack_manifest.grid(row=10, column=0, sticky="ew", pady=(10, 0))
+        self.button_rack_manifest.grid(row=11, column=0, sticky="ew", pady=(10, 0))
 
     def rack_scanned_button_callback(self):
         try:
@@ -329,4 +321,5 @@ class App(ttk.Window):
 
         self.Dropdown_frame.set_values(data)
 
-SplashScreen()
+app = App()
+app.mainloop()
