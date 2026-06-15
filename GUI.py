@@ -74,6 +74,32 @@ class FileFrame(ttk.Frame):
         if self.file_path:
             self.label.configure(text=self.file_path)
 
+class FolderFrame(ttk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.grid_columnconfigure(0, weight=1)
+
+        self.border_frame = ttk.Frame(self, bootstyle="secondary", padding=2)
+        self.border_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        self.border_frame.grid_columnconfigure(0, weight=1)
+
+        self.button = ttk.Button(
+            self.border_frame,
+            text="Select Folder",
+            command=self.open_folder,
+            bootstyle="success-outline"
+        )
+        self.button.grid(row=0, column=0, sticky="ew")
+        self.label = ttk.Label(self, text="No folder selected", bootstyle="bg")
+        self.label.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+
+    def open_folder(self):
+        self.folder_path = filedialog.askdirectory()
+        if self.folder_path:
+            self.label.configure(text=self.folder_path)
+
 class DateFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
@@ -207,21 +233,24 @@ class App(ttk.Window):
         title_frame = TitleFrame(container)
         title_frame.grid(row=0, column=0, sticky="ew", pady=10)
 
-        self.Subtitle_frame_scanned = SubTitleFrame(container, "Select Scanned Glass Report")
-        self.Subtitle_frame_scanned.grid(row=1, column=0, sticky="ew", pady=10)
+        self.Scanned_Subtitle_frame = SubTitleFrame(container, "Select Scanned Glass Report")
+        self.Scanned_Subtitle_frame.grid(row=1, column=0, sticky="ew", pady=10)
 
-        self.File_frame_scanned = FileFrame(container)
-        self.File_frame_scanned.grid(row=2, column=0, sticky="ew", pady=10)
+        self.Folder_frame = FolderFrame(container)
+        self.Folder_frame.grid(row=2, column=0, sticky="ew", pady=10)
 
-        self.Date_frame = DateFrame(container)
-        self.Date_frame.grid(row=3, column=0, sticky="ew", pady=10)
+        self.Scanned_File_frame = FileFrame(container)
+        self.Scanned_File_frame.grid(row=3, column=0, sticky="ew", pady=10)
 
-        self.radiobutton_frame = RadiobuttonFrame(container, "Delivery Location", values=["Local", "OOT", "All"])
-        self.radiobutton_frame.grid(row=4, column=0, sticky="ew", pady=10)
-        self.radiobutton_frame.variable.trace_add("write", self.update_dropdown)
+        # self.Date_frame = DateFrame(container)
+        # self.Date_frame.grid(row=4, column=0, sticky="ew", pady=10)
 
-        self.Dropdown_frame = DropdownFrame(container, data=["All"])
-        self.Dropdown_frame.grid(row=5, column=0, sticky="ew", pady=10)
+        # self.radiobutton_frame = RadiobuttonFrame(container, "Delivery Location", values=["Local", "OOT", "All"])
+        # self.radiobutton_frame.grid(row=5, column=0, sticky="ew", pady=10)
+        # self.radiobutton_frame.variable.trace_add("write", self.update_dropdown)
+
+        self.Dropdown_frame = DropdownFrame(container, data=["All", "8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"])
+        self.Dropdown_frame.grid(row=6, column=0, sticky="ew", pady=10)
 
         self.button_rack_scanned = ttk.Button(
             container, 
@@ -229,13 +258,13 @@ class App(ttk.Window):
             command=self.rack_scanned_button_callback, 
             bootstyle="success"
         )
-        self.button_rack_scanned.grid(row=6, column=0, sticky="ew", pady=(10, 0))
+        self.button_rack_scanned.grid(row=7, column=0, sticky="ew", pady=(10, 0))
 
-        self.Subtitle_frame_manifest = SubTitleFrame(container, "Select Manifest Glass Report")
-        self.Subtitle_frame_manifest.grid(row=7, column=0, sticky="ew", pady=10)
+        self.Manifest_Subtitle_frame = SubTitleFrame(container, "Select Manifest Glass Report")
+        self.Manifest_Subtitle_frame.grid(row=8, column=0, sticky="ew", pady=10)
 
-        self.File_frame_manifest = FileFrame(container)
-        self.File_frame_manifest.grid(row=9, column=0, sticky="ew", pady=10)
+        self.Manifest_File_frame = FileFrame(container)
+        self.Manifest_File_frame.grid(row=9, column=0, sticky="ew", pady=10)
 
         self.button_scanned_manifest = ttk.Button(
             container, 
@@ -261,9 +290,10 @@ class App(ttk.Window):
             return
 
         self.rack_scanned_filename = run_rack_scanned_compare(
-            scanned_file_path=getattr(self.File_frame_scanned, 'file_path', None),
-            target_date=self.Date_frame.get_date(), 
-            delivery_location=self.radiobutton_frame.get(),
+            rack_folder_path=getattr(self.Folder_frame, 'folder_path', None),
+            scanned_file_path=getattr(self.Scanned_File_frame, 'file_path', None),
+            # target_date=self.Date_frame.get_date(), 
+            # delivery_location=self.radiobutton_frame.get(),
             runs=self.Dropdown_frame.get_selected()
         )
         
@@ -307,17 +337,19 @@ class App(ttk.Window):
         messagebox.showinfo("Info", "Check comparison report for manifest status.")
 
     def update_dropdown(self, *args):
-        choice = self.radiobutton_frame.get()
+        # choice = self.radiobutton_frame.get()
 
-        if choice == "OOT":
-            data = ["All", "8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
-        elif choice == "Local":
-            # data = ["All", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
-            data = ["All"]
-        elif choice == "All":
-            data = ["All"]
-        else:
-            data = ["All"]
+        # if choice == "OOT":
+        #     data = ["All", "8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
+        # elif choice == "Local":
+        #     # data = ["All", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
+        #     data = ["All"]
+        # elif choice == "All":
+        #     data = ["All"]
+        # else:
+        #     data = ["All"]
+
+        data = ["All", "8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
 
         self.Dropdown_frame.set_values(data)
 

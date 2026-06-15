@@ -18,7 +18,7 @@ from logging.handlers import RotatingFileHandler
 # Constants
 # =============================================================================
 
-output_dir = Path(r"\\CH1DC01.viridianglass.net.nz\PDrive\Public\rackprints test")
+output_dir = Path(r"\\CH1DC01.viridianglass.net.nz\PDrive\Public\Past 7 days RackPrints")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 handler = RotatingFileHandler(
@@ -140,7 +140,7 @@ class OnMyWatch:
                                 logging.info(f"Deleted old file: {file}")
                         except Exception as e:
                             logging.info(f"Failed to delete {file}: {e}")
-                    time.sleep(5)
+                    time.sleep(60)
                     logging.info(f"Rack Summary Duplication Task Alive: {datetime.now()}")
 
                     try:
@@ -189,12 +189,24 @@ class Handler(FileSystemEventHandler):
             
             if wait_until_stable(event.src_path):
                 file_path = output_dir / Path(event.src_path).name
-
                 if file_path.exists():
-                    if safe_copy(event.src_path, file_path):
-                        logging.info(f"Overwrote: {file_path}")
+                    if Path(event.src_path).stem != "SaveRackSummaries":
+                        file_count = 1
+                        for file in output_dir.iterdir():
+                            if Path(event.src_path).stem in Path(file).stem.split("-")[0]:
+                                file_count += 1
+                        file_path = file_path.with_name(f"{file_path.stem}-{file_count}{file_path.suffix}")
+                        if safe_copy(event.src_path, file_path):
+                            logging.info(f"Overwrote: {file_path}")
+                        else:
+                            logging.info(f"Failed to overwrite: {file_path}")
+                    elif Path(event.src_path).stem == "SaveRackSummaries":
+                        safe_copy(event.src_path, file_path)
                     else:
-                        logging.info(f"Failed to overwrite: {file_path}")
+                        if safe_copy(event.src_path, file_path):
+                            logging.info(f"Overwrote: {file_path}")
+                        else:
+                            logging.info(f"Failed to overwrite: {file_path}")
                 else:
                     if safe_copy(event.src_path, file_path):
                         logging.info(f"Copied: {file_path}")

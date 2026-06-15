@@ -149,9 +149,9 @@ def get_rack_summary_glass(folder_path):
 # Main functions
 # =============================================================================
 
-def compare_rack_scanned_reports(parsed_folder_path, scanned_file_path, runs):
+def compare_rack_scanned_reports(rack_folder_path, scanned_file_path, runs):
 
-    rack_summary_glass, header = get_rack_summary_glass(parsed_folder_path)
+    rack_summary_glass, header = get_rack_summary_glass(rack_folder_path)
     delivered = get_delivered_glass(scanned_file_path, runs)
 
     matching_keys = set(rack_summary_glass.keys()) & set(delivered.keys())
@@ -239,7 +239,7 @@ def compare_rack_scanned_reports(parsed_folder_path, scanned_file_path, runs):
             highlight_cell(ws_scanned.cell(row=index, column=len(header) + 1), color="FFE78587")
             ws_scanned_discrepancies.append(value)
 
-    output_file = os.path.join(parsed_folder_path, 'Comparison Report.xlsx')
+    output_file = os.path.join(rack_folder_path, 'Comparison Report.xlsx')
     wb.save(output_file)
     return output_file
 
@@ -324,24 +324,24 @@ def compare_rack_discrepancy_manifest_reports(rack_discrepancy_file_path, manife
 
     wb.save(rack_discrepancy_file_path)
 
-def run_rack_scanned_compare(scanned_file_path, target_date, delivery_location, runs):
+def run_rack_scanned_compare(rack_folder_path, scanned_file_path, runs):
 
-    if delivery_location == "OOT" and runs == ["All"]:
-        runs = ["8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
-    elif delivery_location == "Local" and runs == ["All"]:
-        runs = ["8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
-    elif delivery_location == "All" and runs == ["All"]:
-        runs = ["8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
-    else:
-        pass
+    # if delivery_location == "OOT" and runs == ["All"]:
+    #     runs = ["8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn"]
+    # elif delivery_location == "Local" and runs == ["All"]:
+    #     runs = ["8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
+    # elif delivery_location == "All" and runs == ["All"]:
+    #     runs = ["8310-Oamaru", "8311-Timaru", "8312-Ashburton", "8327-Chch To Nel Brn", "8329-Chch To Dun Brn", "8301: Christchurch 1", "8302: Christchurch 2", "8303: Christchurch 3"]
+    # else:
+    #     pass
 
-    parsed_folder_path = generate_rack_folder(rack_summaries_folder, customer_group_file, target_date, delivery_location, runs)
-    if parsed_folder_path == None:
-        return None
-    else:
-        rack_vs_scanned_comparison_report = compare_rack_scanned_reports(parsed_folder_path, scanned_file_path, runs)
+    # parsed_folder_path = generate_rack_folder(rack_summaries_folder, customer_group_file, target_date, delivery_location, runs)
+    # if parsed_folder_path == None:
+    #     return None
+    # else:
+    rack_vs_scanned_comparison_report = compare_rack_scanned_reports(rack_folder_path, scanned_file_path, runs)
 
-        return rack_vs_scanned_comparison_report
+    return rack_vs_scanned_comparison_report
 
 
 
