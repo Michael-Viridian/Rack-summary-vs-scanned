@@ -362,12 +362,16 @@ class App(tk.Tk):
             messagebox.showerror("Error", f"Failed to import CompareReports: {e}")
             return
         
-        compare_scanned_discrepancy_manifest_reports(
-            scanned_discrepancy_file_path=self.rack_scanned_filename,
-            manifest_file_path=getattr(self.File_frame_manifest, 'file_path', None)
-        )
+        try:
+            compare_scanned_discrepancy_manifest_reports(
+                scanned_discrepancy_file_path=self.rack_scanned_filename,
+                manifest_file_path=getattr(self.Manifest_File_frame, 'file_path', None)
+            )
 
-        messagebox.showinfo("Info", "Check comparison report for manifest status.")
+            messagebox.showinfo("Info", "Check comparison report for manifest status.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}.")
 
     def rack_manifest_button_callback(self):
         try:
@@ -376,12 +380,16 @@ class App(tk.Tk):
             messagebox.showerror("Error", f"Failed to import CompareReports: {e}")
             return
         
-        compare_rack_discrepancy_manifest_reports(
-            rack_discrepancy_file_path=self.rack_scanned_filename,
-            manifest_file_path=getattr(self.File_frame_manifest, 'file_path', None)
-        )
+        try:
+            compare_rack_discrepancy_manifest_reports(
+                rack_discrepancy_file_path=self.rack_scanned_filename,
+                manifest_file_path=getattr(self.Manifest_File_frame, 'file_path', None)
+            )
 
-        messagebox.showinfo("Info", "Check comparison report for manifest status.")
+            messagebox.showinfo("Info", "Check comparison report for manifest status.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}.")
 
     def update_dropdown(self, *args):
         # choice = self.radiobutton_frame.get()
